@@ -27,9 +27,6 @@ class Cell:
         self.adjacent_mines = 0
 
     def reveal(self):
-        """
-        Reveal the cell.
-        """
         self.is_revealed = True
 
 def onLeftClick(x, y):
@@ -80,7 +77,7 @@ def onRightClick(x, y):
 
 def init_grid(firstclick_x, firstclick_y):
     """
-    Initialize the Minesweeper grid with cells and randomly place mines.
+    Initialize the Minesweeper grid with cells.
 
     Parameters:
     firstclick_x (int): The x-coordinate of the first clicked cell.

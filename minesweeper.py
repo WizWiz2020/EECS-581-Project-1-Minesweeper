@@ -1,0 +1,158 @@
+"""
+Minesweeper Game Logic for EECS581
+"""
+
+# import modules
+import random
+import sys
+
+GRID_WIDTH = 10
+GRID_HEIGHT = 10
+NUM_MINES = int(sys.argv[1])
+# use this for UI to display num of remaining mines
+mines_remaining = NUM_MINES
+first_click = True
+
+class Cell:
+    """
+    Represents a single cell in the Minesweeper grid.
+    """
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.is_mine = False
+        self.is_revealed = False
+        self.is_flagged = False
+        self.adjacent_mines = 0
+
+    def reveal(self):
+        """
+        Reveal the cell.
+        """
+        self.is_revealed = True
+
+def onLeftClick(x, y):
+    """
+    Handle the left click event on the Minesweeper grid.
+
+    Parameters:
+    x (int): The x-coordinate of the clicked cell.
+    y (int): The y-coordinate of the clicked cell.
+    """
+    if first_click:
+        init_grid(x, y)
+        first_click = False
+
+    # Check if the clicked cell is within the grid bounds
+    if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
+        cell = grid[y][x]
+
+        if cell.is_flagged:
+            return  # Do nothing if the cell is flagged
+        
+        if not cell.is_revealed:
+            cell.reveal()
+            if cell.is_mine:
+                game_over()
+            elif cell.adjacent_mines == 0:
+                reveal_adjacent_cells(x, y)
+
+def onRightClick(x, y):
+    """
+    Handle the right click event on the Minesweeper grid.
+
+    Parameters:
+    x (int): The x-coordinate of the clicked cell.
+    y (int): The y-coordinate of the clicked cell.
+    """
+
+    # Check if the clicked cell is within the grid bounds
+    if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
+        cell = grid[y][x]
+        if not cell.is_revealed:
+            cell.is_flagged = not cell.is_flagged
+            if cell.is_flagged:
+                mines_remaining -= 1
+            else:
+                mines_remaining += 1
+
+
+def init_grid(firstclick_x, firstclick_y):
+    """
+    Initialize the Minesweeper grid with cells and randomly place mines.
+
+    Parameters:
+    firstclick_x (int): The x-coordinate of the first clicked cell.
+    firstclick_y (int): The y-coordinate of the first clicked cell.
+    """
+    global grid
+    grid = [[Cell(x, y) for x in range(GRID_WIDTH)] for y in range(GRID_HEIGHT)]
+    place_mines(firstclick_x, firstclick_y)
+    calculate_adjacent_mines()
+
+def place_mines(firstclick_x, firstclick_y):
+    """
+    Randomly place mines in the grid.
+
+    Parameters:
+    firstclick_x (int): The x-coordinate of the first clicked cell.
+    firstclick_y (int): The y-coordinate of the first clicked cell.
+    """
+    mines_placed = 0
+    while mines_placed < NUM_MINES:
+        x = random.randint(0, GRID_WIDTH - 1)
+        y = random.randint(0, GRID_HEIGHT - 1)
+
+        # prevent mines from being double placed and ensure the first clicked cell is not a mine
+        if not grid[y][x].is_mine or not (first_click and (x, y) == (firstclick_x, firstclick_y)):
+            grid[y][x].is_mine = True
+            mines_placed += 1
+
+def calculate_adjacent_mines():
+    """
+    Calculate the number of adjacent mines for each cell in the grid.
+    """
+    for y in range(GRID_HEIGHT):
+        for x in range(GRID_WIDTH):
+            if not grid[y][x].is_mine:
+                count = 0
+                for dx in [-1, 0, 1]:
+                    for dy in [-1, 0, 1]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < GRID_WIDTH and 0 <= ny < GRID_HEIGHT:
+                            if grid[ny][nx].is_mine:
+                                count += 1
+                grid[y][x].adjacent_mines = count
+
+
+def reveal_adjacent_cells(x, y):
+    """
+    Reveal adjacent cells recursively if they are not mines and have no adjacent mines.
+
+    Parameters:
+    x (int): The x-coordinate of the cell.
+    y (int): The y-coordinate of the cell.
+    """
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < GRID_WIDTH and 0 <= ny < GRID_HEIGHT:
+                neighbor_cell = grid[ny][nx]
+                if not neighbor_cell.is_revealed and not neighbor_cell.is_mine:
+                    neighbor_cell.reveal()
+                    if neighbor_cell.adjacent_mines == 0:
+                        reveal_adjacent_cells(nx, ny)
+
+def game_over():
+    """
+    Handle the game over scenario when a mine is clicked.
+    """
+    print("Game Over! You clicked on a mine.")
+    # Reveal all mines
+    for row in grid:
+        for cell in row:
+            if cell.is_mine:
+                cell.reveal()
+
+    # for the UI people, we can either have all mines be revealed or just close the window

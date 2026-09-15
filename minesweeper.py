@@ -5,6 +5,7 @@ Minesweeper Game Logic for EECS581
 # import modules
 import random
 import sys
+import game_state
 
 GRID_WIDTH = 10
 GRID_HEIGHT = 10
@@ -54,6 +55,8 @@ def onLeftClick(x, y):
                 game_over()
             elif cell.adjacent_mines == 0:
                 reveal_adjacent_cells(x, y)
+            if not cell.is_mine:
+                game_state.check_victory(grid)    
 
 def onRightClick(x, y):
     """
@@ -145,6 +148,7 @@ def game_over():
     """
     Handle the game over scenario when a mine is clicked.
     """
+    game_state.set_game_over()
     print("Game Over! You clicked on a mine.")
     # Reveal all mines
     for row in grid:

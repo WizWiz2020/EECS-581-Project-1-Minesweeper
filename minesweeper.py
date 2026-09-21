@@ -2,17 +2,17 @@
 Minesweeper Game Logic for EECS581
 """
 
-# import modules
 import random
-import sys
 import game_state
 
 GRID_WIDTH = 10
 GRID_HEIGHT = 10
-NUM_MINES = int(sys.argv[1])
-# use this for UI to display num of remaining mines
+
+NUM_MINES = 10
 mines_remaining = NUM_MINES
 first_click = True
+grid = None
+
 
 class Cell:
     """
@@ -30,6 +30,13 @@ class Cell:
     def reveal(self):
         self.is_revealed = True
 
+
+def configure(num_mines):
+    global NUM_MINES, mines_remaining
+    NUM_MINES = num_mines
+    mines_remaining = num_mines
+
+
 def onLeftClick(x, y):
     """
     Handle the left click event on the Minesweeper grid.
@@ -38,17 +45,18 @@ def onLeftClick(x, y):
     x (int): The x-coordinate of the clicked cell.
     y (int): The y-coordinate of the clicked cell.
     """
+    global first_click
+
     if first_click:
         init_grid(x, y)
         first_click = False
 
-    # Check if the clicked cell is within the grid bounds
     if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
         cell = grid[y][x]
 
         if cell.is_flagged:
-            return  # Do nothing if the cell is flagged
-        
+            return game_state.get_game_status()  # flagged cells can't be revealed
+
         if not cell.is_revealed:
             cell.reveal()
             if cell.is_mine:
@@ -56,18 +64,26 @@ def onLeftClick(x, y):
             elif cell.adjacent_mines == 0:
                 reveal_adjacent_cells(x, y)
             if not cell.is_mine:
-                game_state.check_victory(grid)    
+                game_state.check_victory(grid)
+
+    return game_state.get_game_status()
+
 
 def onRightClick(x, y):
     """
-    Handle the right click event on the Minesweeper grid.
+    Handle the right click event on the Minesweeper grid (toggles a flag).
 
     Parameters:
-    x (int): The x-coordinate of the clicked cell.
-    y (int): The y-coordinate of the clicked cell.
+    x (int): The x-coordinate (column) of the clicked cell.
+    y (int): The y-coordinate (row) of the clicked cell.
     """
+    global mines_remaining
 
-    # Check if the clicked cell is within the grid bounds
+    if grid is None:
+        # Nothing has been placed yet; there's nothing to flag before the
+        # first left click.
+        return game_state.get_game_status()
+
     if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
         cell = grid[y][x]
         if not cell.is_revealed:
@@ -76,6 +92,8 @@ def onRightClick(x, y):
                 mines_remaining -= 1
             else:
                 mines_remaining += 1
+
+    return game_state.get_game_status()
 
 
 def init_grid(firstclick_x, firstclick_y):
@@ -91,6 +109,7 @@ def init_grid(firstclick_x, firstclick_y):
     place_mines(firstclick_x, firstclick_y)
     calculate_adjacent_mines()
 
+
 def place_mines(firstclick_x, firstclick_y):
     """
     Randomly place mines in the grid.
@@ -104,10 +123,14 @@ def place_mines(firstclick_x, firstclick_y):
         x = random.randint(0, GRID_WIDTH - 1)
         y = random.randint(0, GRID_HEIGHT - 1)
 
-        # prevent mines from being double placed and ensure the first clicked cell is not a mine
-        if not grid[y][x].is_mine or not (first_click and (x, y) == (firstclick_x, firstclick_y)):
+        # Original condition here was `not A or not B`, which is true for
+        # almost any cell and barely constrained placement. This requires
+        # both: the cell isn't already a mine, AND it isn't the first-clicked
+        # cell.
+        if not grid[y][x].is_mine and (x, y) != (firstclick_x, firstclick_y):
             grid[y][x].is_mine = True
             mines_placed += 1
+
 
 def calculate_adjacent_mines():
     """
@@ -128,11 +151,8 @@ def calculate_adjacent_mines():
 
 def reveal_adjacent_cells(x, y):
     """
-    Reveal adjacent cells recursively if they are not mines and have no adjacent mines.
-
-    Parameters:
-    x (int): The x-coordinate of the cell.
-    y (int): The y-coordinate of the cell.
+    Reveal adjacent cells recursively if they are not mines and have no
+    adjacent mines.
     """
     for dx in [-1, 0, 1]:
         for dy in [-1, 0, 1]:
@@ -144,16 +164,25 @@ def reveal_adjacent_cells(x, y):
                     if neighbor_cell.adjacent_mines == 0:
                         reveal_adjacent_cells(nx, ny)
 
+
 def game_over():
     """
     Handle the game over scenario when a mine is clicked.
     """
     game_state.set_game_over()
     print("Game Over! You clicked on a mine.")
-    # Reveal all mines
     for row in grid:
         for cell in row:
             if cell.is_mine:
                 cell.reveal()
 
-    # for the UI people, we can either have all mines be revealed or just close the window
+
+def reset():
+    """
+    Reset all module-level state for a new game (call before starting over).
+    """
+    global grid, first_click, mines_remaining
+    grid = None
+    first_click = True
+    mines_remaining = NUM_MINES
+    game_state.reset_game_status()

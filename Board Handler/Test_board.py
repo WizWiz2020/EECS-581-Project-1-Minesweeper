@@ -1,3 +1,8 @@
+#-----
+#Author: Sione Daneisl
+#Test board to run and operate the program, for testing purposes to make sure our code worked, before the UI system was done and operating.
+#-----
+
 import minesweeper2 as ms
 
 def print_grid(reveal_all=False): #function to print the grid

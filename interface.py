@@ -1,9 +1,7 @@
 """
-Tkinter UI for Minesweeper.
-
-This module only knows how to draw a board and forward clicks — it has no
-knowledge of mines, adjacency, or win/loss rules. main.py wires it to
-minesweeper.py.
+EECS 581
+Caleb Harmsen
+Creation 9/12/2026
 """
 
 import tkinter as tk
@@ -62,12 +60,7 @@ class MinesweeperUI:
 
     def _load_scaled_image(self, path, target_size):
         """
-        Load a PhotoImage and resize it (integer zoom/subsample,
-        nearest-neighbor) toward target_size in each dimension. This uses
-        plain tkinter only — no Pillow dependency — so the scaling is
-        blocky rather than smooth, and only hits exact multiples of the
-        source size. If you want smooth, exact scaling, swap this for
-        Pillow's Image.resize(...) with ImageTk.PhotoImage.
+        Load a PhotoImage and resize it
         """
         image = tk.PhotoImage(file=path)
         width = image.width()
@@ -82,12 +75,9 @@ class MinesweeperUI:
         return image
 
     def _build_board(self, on_left_click, on_right_click):
-        # Tk only treats a Button's width/height as pixels when it's
-        # displaying an image; with text only, they're character counts.
-        # Giving every tile a real image at all times (a transparent
-        # placeholder when covered/uncovered) keeps sizing pixel-based and
-        # consistent across all four tile states, without needing a
-        # wrapper Frame.
+        """
+        Builds the board
+        """
         self.blank_image = tk.PhotoImage(width=TILE_SIZE, height=TILE_SIZE)
 
         for r in range(BOARD_SIZE):
@@ -112,6 +102,9 @@ class MinesweeperUI:
             self.tiles.append(row_tiles)
 
     def set_tile(self, row, col, tile_type, number=0):
+        """
+        Set the tiles with the row, col and the type of the tile
+        """
         tile = self.tiles[row][col]
 
         if tile_type == "covered":
@@ -140,9 +133,7 @@ class MinesweeperUI:
 
     def render(self, grid):
         """
-        Redraw every tile from the current Cell grid (minesweeper.grid).
-        Safe to call with grid=None (before the first click) — the board
-        just stays in its initial all-covered state.
+        Redraw every tile from the current Cell grid
         """
         if grid is None:
             return
